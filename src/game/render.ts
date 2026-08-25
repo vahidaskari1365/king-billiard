@@ -14,6 +14,7 @@ export interface RenderState {
   showAim: boolean;
   rolling: boolean;
   aimPreview: AimPreview | null;
+  spin?: { x: number; y: number };
 }
 
 /* ---------------------------- color utils ------------------------ */
@@ -64,7 +65,7 @@ function buildTable(
   ctx.fill();
   ctx.restore();
 
-  // ---- wooden frame
+  // ---- wooden frame (enhanced with grain texture)
   const wood = ctx.createLinearGradient(
     sx(-f),
     sy(-f),
@@ -72,13 +73,33 @@ function buildTable(
     sy(H + f),
   );
   wood.addColorStop(0, "#7a4a26");
-  wood.addColorStop(0.25, "#9c6636");
+  wood.addColorStop(0.15, "#9c6636");
+  wood.addColorStop(0.3, "#7a4a26");
   wood.addColorStop(0.5, "#6b3f1f");
-  wood.addColorStop(0.75, "#8a5628");
+  wood.addColorStop(0.7, "#8a5628");
+  wood.addColorStop(0.85, "#6b3f1f");
   wood.addColorStop(1, "#5c3517");
   ctx.fillStyle = wood;
   roundRect(ctx, sx(-f), sy(-f), (W + 2 * f) * scale, (H + 2 * f) * scale, 12 * scale);
   ctx.fill();
+
+  // Wood grain texture
+  ctx.save();
+  ctx.globalAlpha = 0.06;
+  ctx.strokeStyle = "#3d2412";
+  ctx.lineWidth = 0.3 * scale;
+  for (let i = 0; i < 40; i++) {
+    const y = sy(-f) + Math.random() * (H + 2 * f) * scale;
+    ctx.beginPath();
+    ctx.moveTo(sx(-f), y);
+    ctx.bezierCurveTo(
+      sx(-f) + (W + 2 * f) * scale * 0.3, y + (Math.random() - 0.5) * 4 * scale,
+      sx(-f) + (W + 2 * f) * scale * 0.7, y + (Math.random() - 0.5) * 4 * scale,
+      sx(W + f), y,
+    );
+    ctx.stroke();
+  }
+  ctx.restore();
 
   // wood sheen
   const sheen = ctx.createLinearGradient(sx(-f), sy(-f), sx(-f), sy(H + f));
@@ -107,7 +128,7 @@ function buildTable(
   roundRect(ctx, sx(-railW), sy(-railW), (W + 2 * railW) * scale, (H + 2 * railW) * scale, 6 * scale);
   ctx.fill();
 
-  // ---- felt with overhead lighting
+  // ---- felt with overhead lighting (enhanced)
   const feltBase = mode === "snooker" ? "#1c7a4c" : "#1e8a5a";
   const felt = ctx.createRadialGradient(
     sx(W / 2),
@@ -117,21 +138,46 @@ function buildTable(
     sy(H / 2),
     W * 0.62 * scale,
   );
-  felt.addColorStop(0, shade(feltBase, 0.32));
+  felt.addColorStop(0, shade(feltBase, 0.35));
+  felt.addColorStop(0.25, shade(feltBase, 0.15));
   felt.addColorStop(0.45, feltBase);
-  felt.addColorStop(1, shade(feltBase, -0.45));
+  felt.addColorStop(0.8, shade(feltBase, -0.25));
+  felt.addColorStop(1, shade(feltBase, -0.50));
   ctx.fillStyle = felt;
   ctx.fillRect(sx(0), sy(0), W * scale, H * scale);
 
-  // felt nap noise
+  // felt cloth texture - fine cross-hatch
   ctx.save();
-  ctx.globalAlpha = 0.05;
-  for (let i = 0; i < 900; i++) {
+  ctx.globalAlpha = 0.035;
+  for (let i = 0; i < 1200; i++) {
     const rx = Math.random() * W * scale + sx(0);
     const ry = Math.random() * H * scale + sy(0);
     ctx.fillStyle = Math.random() > 0.5 ? "#ffffff" : "#000000";
-    ctx.fillRect(rx, ry, scale * 0.9, scale * 0.9);
+    const sz = scale * (0.5 + Math.random() * 0.6);
+    ctx.fillRect(rx, ry, sz, sz);
   }
+  ctx.restore();
+
+  // overhead lamp glow effect (warm spot lights)
+  ctx.save();
+  ctx.globalAlpha = 0.08;
+  const lampGlow1 = ctx.createRadialGradient(
+    sx(W * 0.3), sy(H * 0.4), 0,
+    sx(W * 0.3), sy(H * 0.4), W * 0.35 * scale,
+  );
+  lampGlow1.addColorStop(0, "#fffde0");
+  lampGlow1.addColorStop(1, "transparent");
+  ctx.fillStyle = lampGlow1;
+  ctx.fillRect(sx(0), sy(0), W * scale, H * scale);
+
+  const lampGlow2 = ctx.createRadialGradient(
+    sx(W * 0.7), sy(H * 0.4), 0,
+    sx(W * 0.7), sy(H * 0.4), W * 0.35 * scale,
+  );
+  lampGlow2.addColorStop(0, "#fffde0");
+  lampGlow2.addColorStop(1, "transparent");
+  ctx.fillStyle = lampGlow2;
+  ctx.fillRect(sx(0), sy(0), W * scale, H * scale);
   ctx.restore();
 
   // cushion inner shadow (top edge darker)
@@ -418,7 +464,7 @@ export function drawGame(
 
   ctx.clearRect(0, 0, cssW, cssH);
 
-  // background
+  // background (enhanced)
   const bg = ctx.createRadialGradient(
     cssW / 2,
     cssH * 0.36,
@@ -427,10 +473,22 @@ export function drawGame(
     cssH / 2,
     Math.max(cssW, cssH) * 0.75,
   );
-  bg.addColorStop(0, "#101528");
-  bg.addColorStop(1, "#05070d");
+  bg.addColorStop(0, "#141a30");
+  bg.addColorStop(0.4, "#0e1322");
+  bg.addColorStop(1, "#040610");
   ctx.fillStyle = bg;
   ctx.fillRect(0, 0, cssW, cssH);
+
+  // ambient floor texture
+  ctx.save();
+  ctx.globalAlpha = 0.02;
+  for (let i = 0; i < 200; i++) {
+    const rx = Math.random() * cssW;
+    const ry = Math.random() * cssH;
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(rx, ry, 1.5, 1.5);
+  }
+  ctx.restore();
 
   // table (cached)
   const key = `${st.mode}:${Math.round(cssW)}x${Math.round(cssH)}`;
@@ -470,24 +528,106 @@ export function drawGame(
     drawBall(ctx, b, sx, sy, scale);
   }
 
-  // cue stick
-  if (st.showAim && cue && cue.active && !st.rolling) {
-    drawCueStick(ctx, cue, st.aimAngle, st.power, sx, sy, scale);
+  // Spin indicator overlay on cue ball (when aiming)
+  if (st.showAim && cue && cue.active && !st.rolling && st.spin && (st.spin.x !== 0 || st.spin.y !== 0)) {
+    const px = sx(cue.x);
+    const py = sy(cue.y);
+    const pr = cue.r * scale;
+    
+    // Outer ring
+    ctx.save();
+    ctx.globalAlpha = 0.4;
+    ctx.strokeStyle = "#ffffff";
+    ctx.lineWidth = 0.8 * scale;
+    ctx.beginPath();
+    ctx.arc(px, py, pr * 1.15, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
+    
+    // Cross hairs
+    ctx.save();
+    ctx.globalAlpha = 0.2;
+    ctx.strokeStyle = "#ffffff";
+    ctx.lineWidth = 0.4 * scale;
+    ctx.setLineDash([2 * scale, 2 * scale]);
+    ctx.beginPath();
+    ctx.moveTo(px - pr * 1.15, py);
+    ctx.lineTo(px + pr * 1.15, py);
+    ctx.moveTo(px, py - pr * 1.15);
+    ctx.lineTo(px, py + pr * 1.15);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.restore();
   }
 
-  // vignette
+  // cue stick
+  if (st.showAim && cue && cue.active && !st.rolling) {
+    drawCueStick(ctx, cue, st.aimAngle, st.power, sx, sy, scale, st.spin);
+  }
+
+  // vignette (enhanced)
   const vig = ctx.createRadialGradient(
     cssW / 2,
     cssH / 2,
-    Math.min(cssW, cssH) * 0.35,
+    Math.min(cssW, cssH) * 0.3,
     cssW / 2,
     cssH / 2,
     Math.max(cssW, cssH) * 0.72,
   );
   vig.addColorStop(0, "rgba(0,0,0,0)");
-  vig.addColorStop(1, "rgba(0,0,0,0.42)");
+  vig.addColorStop(0.7, "rgba(0,0,0,0.2)");
+  vig.addColorStop(1, "rgba(0,0,0,0.55)");
   ctx.fillStyle = vig;
   ctx.fillRect(0, 0, cssW, cssH);
+
+  // Power indicator arc when aiming and pulling
+  if (st.showAim && cue && cue.active && !st.rolling && st.power > 0.01) {
+    const px = sx(cue.x);
+    const py = sy(cue.y);
+    const pr = cue.r * scale;
+    
+    // Power arc
+    const arcRadius = pr * 2.5;
+    const startAngle = st.aimAngle - Math.PI / 2;
+    const arcLength = st.power * Math.PI * 2;
+    
+    ctx.save();
+    ctx.globalAlpha = 0.7;
+    ctx.strokeStyle = st.power > 0.7
+      ? "#ef4444"
+      : st.power > 0.4
+      ? "#f0b429"
+      : "#2bd576";
+    ctx.lineWidth = 2 * scale;
+    ctx.lineCap = "round";
+    ctx.beginPath();
+    ctx.arc(px, py, arcRadius, startAngle, startAngle + arcLength);
+    ctx.stroke();
+    
+    // Glow effect
+    ctx.globalAlpha = 0.3;
+    ctx.lineWidth = 4 * scale;
+    ctx.filter = `blur(${2 * scale}px)`;
+    ctx.beginPath();
+    ctx.arc(px, py, arcRadius, startAngle, startAngle + arcLength);
+    ctx.stroke();
+    ctx.filter = "none";
+    ctx.restore();
+    
+    // Power text
+    ctx.save();
+    ctx.fillStyle = "#ffffff";
+    ctx.font = `bold ${Math.round(8 * scale)}px "Chakra Petch", sans-serif`;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.globalAlpha = 0.8;
+    ctx.fillText(
+      `${Math.round(st.power * 100)}%`,
+      px,
+      py - arcRadius - 6 * scale,
+    );
+    ctx.restore();
+  }
 }
 
 function drawAimGuide(
@@ -580,10 +720,11 @@ function drawCueStick(
   sx: (x: number) => number,
   sy: (y: number) => number,
   scale: number,
+  spin?: { x: number; y: number },
 ) {
   const dirX = Math.cos(angle);
   const dirY = Math.sin(angle);
-  const pull = power * 13;
+  const pull = power * 18; // More dramatic pull-back
   const tipDist = cue.r + 1.6 + pull;
   const stickLen = 74;
 
@@ -645,6 +786,35 @@ function drawCueStick(
     sy(tipY - dirY * stickLen * 0.9),
   );
   ctx.stroke();
+
+  // Spin indicator on cue ball
+  if (spin && (spin.x !== 0 || spin.y !== 0)) {
+    const px = sx(cue.x);
+    const py = sy(cue.y);
+    const pr = cue.r * scale;
+    
+    // Contact point
+    const cpX = px + spin.x * pr * 0.7;
+    const cpY = py - spin.y * pr * 0.7;
+    
+    // Draw contact point with glow
+    ctx.beginPath();
+    ctx.arc(cpX, cpY, pr * 0.18, 0, Math.PI * 2);
+    const glow = ctx.createRadialGradient(cpX, cpY, 0, cpX, cpY, pr * 0.25);
+    glow.addColorStop(0, "rgba(239, 68, 68, 0.95)");
+    glow.addColorStop(0.7, "rgba(239, 68, 68, 0.6)");
+    glow.addColorStop(1, "rgba(239, 68, 68, 0)");
+    ctx.fillStyle = glow;
+    ctx.fill();
+    
+    ctx.beginPath();
+    ctx.arc(cpX, cpY, pr * 0.1, 0, Math.PI * 2);
+    ctx.fillStyle = "#ef4444";
+    ctx.fill();
+    ctx.strokeStyle = "rgba(255,255,255,0.8)";
+    ctx.lineWidth = 0.5 * scale;
+    ctx.stroke();
+  }
 
   ctx.restore();
 }

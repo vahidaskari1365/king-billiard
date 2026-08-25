@@ -515,12 +515,16 @@ function GameScreen({
   const phaseRef = useRef<"aim" | "rolling">("aim");
   const [aimAngle, setAimAngle] = useState(0);
   const aimRef = useRef(0);
-  const [power, setPower] = useState(0.55);
-  const powerRef = useRef(0.55);
+  const [power, setPower] = useState(0);
+  const powerRef = useRef(0);
   const [message, setMessage] = useState<string>("");
   const [soundOn, setSoundOn] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showWinner, setShowWinner] = useState(false);
+  const [spinX, setSpinX] = useState(0); // -1 to 1 (left/right)
+  const [spinY, setSpinY] = useState(0); // -1 to 1 (top/bottom)
+  const [isDragging, setIsDragging] = useState(false);
+  const dragStartRef = useRef({ x: 0, y: 0 });
 
   const eventsRef = useRef<ShotEvents>(newShotEvents());
   const preShotRef = useRef<PreShotInfo | null>(null);
@@ -535,7 +539,7 @@ function GameScreen({
   /* ------------------------- shot lifecycle ------------------------ */
 
   const fireShot = useCallback(
-    (angle: number, pow: number) => {
+    (angle: number, pow: number, spin?: { x: number; y: number }) => {
       const balls = ballsRef.current;
       if (!balls) return;
       const cue = balls.find((b) => b.id === 0);
@@ -543,6 +547,20 @@ function GameScreen({
       const speed = TABLE.maxShotSpeed * (0.08 + pow * 0.92);
       cue.vx = Math.cos(angle) * speed;
       cue.vy = Math.sin(angle) * speed;
+      
+      // Apply spin effect - add slight curve to the ball
+      if (spin && (spin.x !== 0 || spin.y !== 0)) {
+        const spinForce = 12; // strength of spin effect
+        const perpX = -Math.sin(angle);
+        const perpY = Math.cos(angle);
+        cue.vx += perpX * spin.x * spinForce;
+        cue.vy += perpY * spin.x * spinForce;
+        // Top/back spin affects speed
+        const speedMod = 1 + spin.y * 0.15;
+        cue.vx *= speedMod;
+        cue.vy *= speedMod;
+      }
+      
       preShotRef.current = computePreShot(
         config.mode,
         rulesRef.current,
@@ -664,6 +682,7 @@ function GameScreen({
         showAim: phaseRef.current === "aim" && humanTurn,
         rolling: phaseRef.current === "rolling",
         aimPreview: aimPreviewRef.current,
+        spin: { x: spinX, y: spinY },
       });
 
       raf = requestAnimationFrame(loop);
@@ -698,6 +717,7 @@ function GameScreen({
   const updateAimFromPointer = useCallback(
     (clientX: number, clientY: number) => {
       if (phaseRef.current !== "aim") return;
+      if (isDragging) return; // Don't update aim while dragging for power
       const r = rulesRef.current;
       if (r.winner !== null || r.players[r.current].isAI) return;
       const canvas = canvasRef.current;
@@ -713,8 +733,75 @@ function GameScreen({
       aimRef.current = ang;
       setAimAngle(ang);
     },
-    [],
+    [isDragging],
   );
+
+  /* ------------------------- drag to shoot ------------------------ */
+  
+  const handlePointerDown = useCallback(
+    (clientX: number, clientY: number) => {
+      if (phaseRef.current !== "aim") return;
+      const r = rulesRef.current;
+      if (r.winner !== null || r.players[r.current].isAI) return;
+      
+      setIsDragging(true);
+      dragStartRef.current = { x: clientX, y: clientY };
+      updateAimFromPointer(clientX, clientY);
+    },
+    [updateAimFromPointer],
+  );
+
+  const handlePointerMove = useCallback(
+    (clientX: number, clientY: number) => {
+      if (!isDragging) {
+        updateAimFromPointer(clientX, clientY);
+        return;
+      }
+      
+      // Calculate drag distance for power
+      const dx = clientX - dragStartRef.current.x;
+      const dy = clientY - dragStartRef.current.y;
+      const dragDist = Math.sqrt(dx * dx + dy * dy);
+      const maxDrag = 200; // pixels
+      const newPower = Math.min(1, dragDist / maxDrag);
+      
+      setPower(newPower);
+      powerRef.current = newPower;
+    },
+    [isDragging, updateAimFromPointer],
+  );
+
+  const spinXRef = useRef(0);
+  const spinYRef = useRef(0);
+  useEffect(() => { spinXRef.current = spinX; }, [spinX]);
+  useEffect(() => { spinYRef.current = spinY; }, [spinY]);
+
+  const handlePointerUp = useCallback(() => {
+    if (!isDragging) return;
+    
+    const r = rulesRef.current;
+    if (!r || r.winner !== null || phaseRef.current !== "aim") {
+      setIsDragging(false);
+      setPower(0);
+      powerRef.current = 0;
+      return;
+    }
+    if (r.players[r.current].isAI) {
+      setIsDragging(false);
+      setPower(0);
+      powerRef.current = 0;
+      return;
+    }
+    
+    // Fire the shot if we have enough power
+    if (powerRef.current > 0.05) {
+      fireShot(aimRef.current, powerRef.current, { x: spinXRef.current, y: spinYRef.current });
+    }
+    
+    setIsDragging(false);
+    setPower(0);
+    powerRef.current = 0;
+  }, [isDragging, fireShot]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -741,8 +828,9 @@ function GameScreen({
     const r = rulesRef.current;
     if (!r || r.winner !== null || phaseRef.current !== "aim") return;
     if (r.players[r.current].isAI) return;
-    fireShot(aimRef.current, powerRef.current);
-  }, [fireShot]);
+    if (powerRef.current < 0.05) return;
+    fireShot(aimRef.current, powerRef.current, { x: spinX, y: spinY });
+  }, [fireShot, spinX, spinY]);
 
   /* --------------------------- fullscreen -------------------------- */
 
@@ -792,6 +880,15 @@ function GameScreen({
 
   const current = rules.players[rules.current];
   const isHumanTurn = current && !current.isAI && rules.winner === null;
+
+  // Show tutorial message on first game
+  const [showTutorial, setShowTutorial] = useState(true);
+  useEffect(() => {
+    if (showTutorial) {
+      const t = window.setTimeout(() => setShowTutorial(false), 5000);
+      return () => window.clearTimeout(t);
+    }
+  }, [showTutorial]);
 
   const trayColors = (i: 0 | 1) =>
     rules.trays[i].map((n) =>
@@ -897,8 +994,10 @@ function GameScreen({
         <canvas
           ref={canvasRef}
           className="absolute inset-0 size-full touch-none cursor-crosshair"
-          onPointerMove={(e) => updateAimFromPointer(e.clientX, e.clientY)}
-          onPointerDown={(e) => updateAimFromPointer(e.clientX, e.clientY)}
+          onPointerMove={(e) => handlePointerMove(e.clientX, e.clientY)}
+          onPointerDown={(e) => handlePointerDown(e.clientX, e.clientY)}
+          onPointerUp={() => handlePointerUp()}
+          onPointerLeave={() => handlePointerUp()}
         />
 
         {/* message toast */}
@@ -927,6 +1026,25 @@ function GameScreen({
             >
               <Loader2 className="size-4 animate-spin text-primary" />
               {current.name} در حال فکر کردن…
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Tutorial overlay */}
+        <AnimatePresence>
+          {showTutorial && isHumanTurn && phase === "aim" && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20 glass-strong rounded-2xl p-6 max-w-sm mx-4 text-center pointer-events-none"
+            >
+              <div className="text-primary font-display text-lg mb-2">نحوه بازی</div>
+              <div className="text-sm text-muted leading-7 space-y-2">
+                <p>🎯 <strong>نشانه‌گیری:</strong> موس را روی میز حرکت دهید</p>
+                <p>🏹 <strong>شلیک:</strong> کلیک کنید و عقب بکشید، سپس ول کنید</p>
+                <p>🔄 <strong>اسپین:</strong> روی توپ سفید کوچک پایین کلیک کنید</p>
+              </div>
             </motion.div>
           )}
         </AnimatePresence>
@@ -979,29 +1097,75 @@ function GameScreen({
 
       {/* controls */}
       <div className="bg-surface/80 backdrop-blur border-t border-line px-4 py-3 z-20">
-        <div className="flex items-center gap-4 max-w-2xl mx-auto">
+        <div className="flex items-center gap-4 max-w-3xl mx-auto">
+          {/* Spin control */}
+          <div className="flex flex-col items-center gap-1.5">
+            <span className="text-[10px] text-muted">اسپین</span>
+            <div className="relative size-14 rounded-full border-2 border-line bg-surface-2 shadow-inner">
+              {/* Cue ball representation */}
+              <div className="absolute inset-0 rounded-full bg-gradient-to-br from-white via-gray-100 to-gray-300 shadow-inner" />
+              {/* Hit point indicator */}
+              <div
+                className="absolute size-3 rounded-full bg-red-500 shadow-md border border-white/50 transition-all duration-150 cursor-pointer"
+                style={{
+                  left: `${50 + spinX * 35}%`,
+                  top: `${50 - spinY * 35}%`,
+                  transform: "translate(-50%, -50%)",
+                }}
+              />
+              {/* Clickable overlay for setting spin */}
+              <div
+                className="absolute inset-0 rounded-full cursor-pointer"
+                onClick={(e) => {
+                  const rect = e.currentTarget.getBoundingClientRect();
+                  const x = ((e.clientX - rect.left) / rect.width - 0.5) * 2;
+                  const y = -((e.clientY - rect.top) / rect.height - 0.5) * 2;
+                  // Clamp to circle
+                  const dist = Math.sqrt(x * x + y * y);
+                  const clampedX = dist > 1 ? x / dist : x;
+                  const clampedY = dist > 1 ? y / dist : y;
+                  setSpinX(clampedX);
+                  setSpinY(clampedY);
+                }}
+              />
+            </div>
+            <div className="flex gap-1">
+              <button
+                onClick={() => { setSpinX(0); setSpinY(0); }}
+                className="text-[9px] px-1.5 py-0.5 rounded bg-white/5 hover:bg-white/15 text-muted cursor-pointer"
+              >
+                وسط
+              </button>
+            </div>
+          </div>
+
+          {/* Power indicator */}
           <div className="flex-1">
             <div className="flex justify-between text-xs text-muted mb-1.5">
               <span>قدرت ضربه</span>
               <span className="font-latin">{Math.round(power * 100)}%</span>
             </div>
-            <input
-              type="range"
-              min={5}
-              max={100}
-              value={Math.round(power * 100)}
-              onChange={(e) => {
-                const v = Number(e.target.value) / 100;
-                setPower(v);
-                powerRef.current = v;
-              }}
-              className="w-full accent-primary cursor-pointer"
-              aria-label="قدرت ضربه"
-            />
+            <div className="h-3 rounded-full bg-surface-2 border border-line overflow-hidden">
+              <div
+                className="h-full rounded-full transition-all duration-75"
+                style={{
+                  width: `${power * 100}%`,
+                  background: power > 0.7
+                    ? "linear-gradient(90deg, #f0b429, #e53935)"
+                    : power > 0.4
+                    ? "linear-gradient(90deg, #2bd576, #f0b429)"
+                    : "linear-gradient(90deg, #2bd576, #2bd576)",
+                }}
+              />
+            </div>
+            <p className="text-[10px] text-muted mt-1 text-center">
+              کلیک کنید و عقب بکشید تا قدرت تنظیم شود
+            </p>
           </div>
+
           <button
             onClick={fire}
-            disabled={!isHumanTurn || phase !== "aim"}
+            disabled={!isHumanTurn || phase !== "aim" || power < 0.05}
             className="btn-gold !px-6 !py-3 disabled:opacity-40 disabled:cursor-not-allowed !rounded-2xl"
           >
             <Zap className="size-5" />
@@ -1009,8 +1173,7 @@ function GameScreen({
           </button>
         </div>
         <p className="text-center text-[11px] text-muted mt-2">
-          نشانه‌گیری: انگشت/موس را روی میز بکشید یا از کلیدهای جهت‌دار استفاده کنید
-          (Shift برای دقیق‌تر) — شلیک: Space
+          نشانه‌گیری: موس روی میز — شلیک: کلیک + عقب کشیدن و ول کردن | اسپین: روی توپ سفید کوچک کلیک کنید
         </p>
       </div>
     </div>
