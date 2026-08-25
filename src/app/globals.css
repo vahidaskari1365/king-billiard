@@ -1,0 +1,292 @@
+@import url("https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@300;400;500;600;700&family=Russo+One&family=Vazirmatn:wght@300;400;500;600;700;800;900&display=swap");
+@import "tailwindcss";
+
+@theme {
+  /* Design tokens — ui-ux-pro-max "3D & Hyperrealism" gaming system,
+     adapted to a billiards theme (emerald felt + gold on deep navy) */
+  --color-bg: #0a0d1a;
+  --color-surface: #12182b;
+  --color-surface-2: #1a2138;
+  --color-surface-3: #232c4a;
+  --color-line: #263050;
+  --color-primary: #2bd576;
+  --color-primary-dark: #17924f;
+  --color-felt: #1e8a5a;
+  --color-felt-dark: #0c5033;
+  --color-secondary: #7c3aed;
+  --color-accent: #f0b429;
+  --color-rose: #f43f5e;
+  --color-ink: #eef2fb;
+  --color-muted: #94a3b8;
+
+  --font-fa: "Vazirmatn", system-ui, sans-serif;
+  --font-display: "Russo One", "Vazirmatn", sans-serif;
+  --font-latin: "Chakra Petch", monospace;
+
+  --shadow-glow: 0 0 40px rgba(43, 213, 118, 0.35);
+  --shadow-gold: 0 0 40px rgba(240, 180, 41, 0.35);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-fa);
+  background: var(--color-bg);
+  color: var(--color-ink);
+  overflow-x: hidden;
+}
+
+.font-display {
+  font-family: var(--font-display);
+}
+.font-latin {
+  font-family: var(--font-latin);
+}
+
+/* ---------- Glass / surface helpers ---------- */
+.glass {
+  background: linear-gradient(
+    145deg,
+    rgba(26, 33, 56, 0.72),
+    rgba(18, 24, 43, 0.55)
+  );
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border: 1px solid rgba(148, 163, 184, 0.12);
+}
+
+.glass-strong {
+  background: linear-gradient(
+    145deg,
+    rgba(35, 44, 74, 0.9),
+    rgba(18, 24, 43, 0.82)
+  );
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(148, 163, 184, 0.16);
+}
+
+.text-gradient-gold {
+  background: linear-gradient(120deg, #f6d365 0%, #f0b429 45%, #e8871e 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.text-gradient-green {
+  background: linear-gradient(120deg, #7df0ae 0%, #2bd576 50%, #0ea5e9 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* ---------- Felt texture (game + cards) ---------- */
+.felt-texture {
+  background-color: #1e8a5a;
+  background-image:
+    radial-gradient(ellipse at 50% 40%, rgba(255, 255, 255, 0.12), transparent 65%),
+    repeating-conic-gradient(
+      from 0deg at 0 0,
+      rgba(255, 255, 255, 0.018) 0deg 90deg,
+      rgba(0, 0, 0, 0.03) 90deg 180deg
+    );
+}
+
+.wood-frame {
+  background:
+    linear-gradient(135deg, #6b4226 0%, #8a5a33 30%, #5c3517 70%, #7a4a28 100%);
+  box-shadow:
+    inset 0 2px 6px rgba(255, 220, 160, 0.25),
+    inset 0 -4px 12px rgba(0, 0, 0, 0.55),
+    0 20px 60px rgba(0, 0, 0, 0.6);
+}
+
+/* ---------- Buttons ---------- */
+.btn-primary {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 1rem;
+  padding: 0.9rem 2rem;
+  font-weight: 800;
+  color: #06220f;
+  background: linear-gradient(135deg, #7df0ae, #2bd576 55%, #0f9d58);
+  box-shadow:
+    0 8px 30px rgba(43, 213, 118, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+  cursor: pointer;
+}
+.btn-primary:hover {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 14px 44px rgba(43, 213, 118, 0.6);
+  filter: brightness(1.06);
+}
+.btn-primary:active {
+  transform: translateY(0) scale(0.99);
+}
+.btn-primary:focus-visible {
+  outline: 3px solid #f0b429;
+  outline-offset: 2px;
+}
+
+.btn-gold {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 1rem;
+  padding: 0.9rem 2rem;
+  font-weight: 800;
+  color: #2d1a00;
+  background: linear-gradient(135deg, #ffe29a, #f0b429 55%, #d9860a);
+  box-shadow:
+    0 8px 30px rgba(240, 180, 41, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+  cursor: pointer;
+}
+.btn-gold:hover {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 14px 44px rgba(240, 180, 41, 0.55);
+}
+.btn-gold:active {
+  transform: translateY(0) scale(0.99);
+}
+.btn-gold:focus-visible {
+  outline: 3px solid #2bd576;
+  outline-offset: 2px;
+}
+
+.btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 1rem;
+  padding: 0.9rem 2rem;
+  font-weight: 700;
+  color: #eef2fb;
+  background: rgba(148, 163, 184, 0.08);
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+.btn-ghost:hover {
+  background: rgba(148, 163, 184, 0.16);
+  border-color: rgba(43, 213, 118, 0.5);
+  transform: translateY(-2px);
+}
+.btn-ghost:focus-visible {
+  outline: 3px solid #2bd576;
+  outline-offset: 2px;
+}
+
+/* ---------- Animations / motion graphics ---------- */
+@keyframes float-y {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-18px) rotate(6deg);
+  }
+}
+
+@keyframes marquee-rtl {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(50%);
+  }
+}
+
+@keyframes pulse-glow {
+  0%,
+  100% {
+    box-shadow: 0 0 20px rgba(43, 213, 118, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 50px rgba(43, 213, 118, 0.7);
+  }
+}
+
+@keyframes spin-slow {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-float {
+  animation: float-y 6s ease-in-out infinite;
+}
+.animate-marquee {
+  animation: marquee-rtl 30s linear infinite;
+}
+.animate-pulse-glow {
+  animation: pulse-glow 3s ease-in-out infinite;
+}
+.animate-spin-slow {
+  animation: spin-slow 24s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-float,
+  .animate-marquee,
+  .animate-pulse-glow,
+  .animate-spin-slow {
+    animation: none;
+  }
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+/* ---------- Scrollbar ---------- */
+::-webkit-scrollbar {
+  width: 10px;
+}
+::-webkit-scrollbar-track {
+  background: #0a0d1a;
+}
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(#1a2138, #263050);
+  border-radius: 8px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #2bd576;
+}
+
+::selection {
+  background: rgba(43, 213, 118, 0.35);
+  color: #fff;
+}
+
+/* ---------- Misc ---------- */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  scrollbar-width: none;
+}
+
+.card-3d {
+  transform-style: preserve-3d;
+  transition: transform 0.35s ease, box-shadow 0.35s ease;
+}
+.card-3d:hover {
+  transform: translateY(-8px) rotateX(2deg);
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.55), 0 0 60px rgba(43, 213, 118, 0.12);
+}
+
+input,
+select,
+textarea {
+  font-family: inherit;
+}

@@ -1,0 +1,27 @@
+{
+  "name": "کیوورس — بازی بیلیارد آنلاین",
+  "short_name": "کیوورس",
+  "description": "بازی بیلیارد سه‌بعدی: اسنوکر، ۸ توپ، ۹ توپ — با هوش مصنوعی یا دوستان بازی کنید",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "dir": "rtl",
+  "lang": "fa",
+  "background_color": "#0a0d1a",
+  "theme_color": "#0a0d1a",
+  "categories": ["games", "entertainment"],
+  "icons": [
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
