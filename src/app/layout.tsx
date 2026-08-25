@@ -11,6 +11,13 @@ export const metadata: Metadata = {
   description:
     "کیوورس — پلتفرم بازی بیلیارد سه‌بعدی با گرافیک خیره‌کننده. اسنوکر، ۸ توپ، ۹ توپ، بازی با هوش مصنوعی یا دوستان، کیف پول و فروشگاه آیتم. قابل نصب روی اندروید و iOS.",
   manifest: "/manifest.json",
+  icons: {
+    icon: [
+      { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icons/icon-512.png", sizes: "512x512", type: "image/png" },
+    ],
+    apple: [{ url: "/icons/icon-512.png", sizes: "512x512" }],
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",

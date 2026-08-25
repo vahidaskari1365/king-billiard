@@ -1,14 +1,19 @@
 /* CueVerse Billiards — service worker (offline shell) */
-const CACHE = "cueverse-v1";
+const CACHE = "cueverse-v2";
 const ASSETS = [
   "/",
   "/play",
+  "/shop",
+  "/wallet",
   "/manifest.json",
+  "/icons/icon-192.png",
   "/icons/icon-512.png",
   "/images/hero-billiards.jpg",
   "/images/mode-8ball.jpg",
   "/images/mode-9ball.jpg",
   "/images/mode-snooker.jpg",
+  "/images/app-devices.jpg",
+  "/images/shop-cues.jpg",
 ];
 
 self.addEventListener("install", (event) => {

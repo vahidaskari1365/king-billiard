@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { motion } from "framer-motion";
 import {
   ArrowRight,
@@ -51,14 +52,27 @@ function StatBar({ label, value }: { label: string; value: number }) {
 }
 
 export default function ShopClient() {
-  const [wallet, setWallet] = useState<Wallet | null>(null);
-  const [owned, setOwned] = useState<Owned | null>(null);
+  const [wallet, setWallet] = useState<Wallet | null>(() => {
+    // Initialize synchronously to avoid setState-in-effect
+    if (typeof window === "undefined") return null;
+    try {
+      return loadWallet();
+    } catch {
+      return null;
+    }
+  });
+  const [owned, setOwned] = useState<Owned | null>(() => {
+    if (typeof window === "undefined") return null;
+    try {
+      return loadOwned();
+    } catch {
+      return null;
+    }
+  });
   const [filter, setFilter] = useState<"all" | ShopItem["category"]>("all");
   const [toast, setToast] = useState<string | null>(null);
 
   useEffect(() => {
-    setWallet(loadWallet());
-    setOwned(loadOwned());
     const un1 = subscribe(setWallet);
     const un2 = subscribeOwned(setOwned);
     return () => {
@@ -113,13 +127,13 @@ export default function ShopClient() {
 
   return (
     <div className="mx-auto max-w-6xl px-4 sm:px-6 py-10">
-      <a
+      <Link
         href="/"
         className="inline-flex items-center gap-2 text-sm text-muted hover:text-primary transition-colors mb-8 cursor-pointer"
       >
         <ArrowRight className="size-4" />
         بازگشت به خانه
-      </a>
+      </Link>
 
       {/* header */}
       <div className="relative rounded-3xl overflow-hidden border border-line mb-10">
@@ -157,10 +171,10 @@ export default function ShopClient() {
           </span>
           <span className="text-xs text-muted">جواهر</span>
         </div>
-        <a href="/wallet" className="btn-gold !py-2.5 !px-5 text-sm mr-auto">
+        <Link href="/wallet" className="btn-gold !py-2.5 !px-5 text-sm mr-auto">
           <Sparkles className="size-4" />
           شارژ کیف پول
-        </a>
+        </Link>
       </div>
 
       {/* filter */}
