@@ -42,4 +42,15 @@ export const db = new Proxy({} as NodePgDatabase, {
   },
 });
 
-export const pool = globalForDb.__arenaNextJsPostgresqlPool ?? null;
+export function getPool(): Pool | null {
+  return globalForDb.__arenaNextJsPostgresqlPool ?? null;
+}
+
+// For backward compatibility - getter that always returns current pool
+export const pool = new Proxy({} as unknown as Pool, {
+  get(_target, prop) {
+    const p = getPool();
+    if (!p) return null;
+    return (p as unknown as Record<string | symbol, unknown>)[prop];
+  },
+}) as unknown as Pool | null;

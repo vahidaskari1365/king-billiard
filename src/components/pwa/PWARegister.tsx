@@ -12,7 +12,14 @@ interface BeforeInstallPromptEvent extends Event {
 export default function PWARegister() {
   const [deferred, setDeferred] = useState<BeforeInstallPromptEvent | null>(null);
   const [showIOS, setShowIOS] = useState(false);
-  const [dismissed, setDismissed] = useState(true);
+  const [dismissed, setDismissed] = useState(() => {
+    if (typeof window === "undefined") return true;
+    try {
+      return localStorage.getItem("cueverse-install-dismissed") === "1";
+    } catch {
+      return true;
+    }
+  });
 
   useEffect(() => {
     if ("serviceWorker" in navigator) {
@@ -20,11 +27,6 @@ export default function PWARegister() {
       if (document.readyState === "complete") register();
       else window.addEventListener("load", register, { once: true });
     }
-
-    const dismissedBefore =
-      typeof window !== "undefined" &&
-      localStorage.getItem("cueverse-install-dismissed") === "1";
-    setDismissed(dismissedBefore);
 
     const onPrompt = (e: Event) => {
       e.preventDefault();

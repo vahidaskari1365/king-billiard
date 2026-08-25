@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   ArrowRight,
@@ -179,13 +180,13 @@ function MenuScreen({
     <div className="h-full overflow-y-auto no-scrollbar">
       <div className="mx-auto max-w-5xl px-4 pb-28 pt-6 sm:px-6">
         <div className="mb-6 flex items-center justify-between">
-          <a
+          <Link
             href="/"
             className="flex items-center gap-2 text-sm text-muted hover:text-primary transition-colors cursor-pointer"
           >
             <ArrowRight className="size-4" />
             بازگشت به سایت
-          </a>
+          </Link>
           <div className="font-latin text-xs tracking-widest text-muted">
             CUEVERSE ARENA
           </div>
@@ -488,8 +489,8 @@ function GameScreen({
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const ballsRef = useRef<Ball[] | null>(null);
-  if (!ballsRef.current) ballsRef.current = rackBalls(config.mode);
+  // Initialize balls once per mount with the correct mode
+  const ballsRef = useRef<Ball[]>(rackBalls(config.mode));
 
   const pockets = useMemo(() => pocketsFor(config.mode), [config.mode]);
 
@@ -532,6 +533,10 @@ function GameScreen({
   const lastSoundRef = useRef(0);
   const aimPreviewRef = useRef<AimPreview | null>(null);
   const humanTurnRef = useRef(true);
+  const spinXRef = useRef(0);
+  const spinYRef = useRef(0);
+  useEffect(() => { spinXRef.current = spinX; }, [spinX]);
+  useEffect(() => { spinYRef.current = spinY; }, [spinY]);
 
   const modeName =
     config.mode === "8ball" ? "۸ توپ" : config.mode === "9ball" ? "۹ توپ" : "اسنوکر";
@@ -682,7 +687,7 @@ function GameScreen({
         showAim: phaseRef.current === "aim" && humanTurn,
         rolling: phaseRef.current === "rolling",
         aimPreview: aimPreviewRef.current,
-        spin: { x: spinX, y: spinY },
+        spin: { x: spinXRef.current, y: spinYRef.current },
       });
 
       raf = requestAnimationFrame(loop);
@@ -770,11 +775,6 @@ function GameScreen({
     },
     [isDragging, updateAimFromPointer],
   );
-
-  const spinXRef = useRef(0);
-  const spinYRef = useRef(0);
-  useEffect(() => { spinXRef.current = spinX; }, [spinX]);
-  useEffect(() => { spinYRef.current = spinY; }, [spinY]);
 
   const handlePointerUp = useCallback(() => {
     if (!isDragging) return;

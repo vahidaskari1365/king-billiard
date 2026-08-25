@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowRight,
@@ -42,14 +43,20 @@ const PACKS: Pack[] = [
 /* ================================================================= */
 
 export default function WalletClient() {
-  const [wallet, setWallet] = useState<Wallet | null>(null);
+  const [wallet, setWallet] = useState<Wallet | null>(() => {
+    if (typeof window === "undefined") return null;
+    try {
+      return loadWallet();
+    } catch {
+      return null;
+    }
+  });
   const [paying, setPaying] = useState<Pack | null>(null);
   const [processing, setProcessing] = useState(false);
   const [done, setDone] = useState(false);
   const [card, setCard] = useState({ number: "", name: "", cvv: "" });
 
   useEffect(() => {
-    setWallet(loadWallet());
     return subscribe(setWallet);
   }, []);
 
@@ -85,13 +92,13 @@ export default function WalletClient() {
 
   return (
     <div className="mx-auto max-w-5xl px-4 sm:px-6 py-10">
-      <a
+      <Link
         href="/"
         className="inline-flex items-center gap-2 text-sm text-muted hover:text-primary transition-colors mb-8 cursor-pointer"
       >
         <ArrowRight className="size-4" />
         بازگشت به خانه
-      </a>
+      </Link>
 
       {/* balance cards */}
       <div className="grid gap-4 sm:grid-cols-2 mb-10">
